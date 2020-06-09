@@ -1,8 +1,4 @@
-﻿// Upgrade NOTE: replaced 'defined USING_DIRECTIONAL_LIGHT' with 'defined (USING_DIRECTIONAL_LIGHT)'
-
-// Upgrade NOTE: replaced '_LightMatrix0' with 'unity_WorldToLight'
-
-Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
+﻿Shader "Unity Shaders Book/Chapter 9/AttenuationAndShadowUseBuildInFunctions"
 {
 	Properties
 	{
@@ -68,9 +64,9 @@ Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
 				fixed3 viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
 				fixed3 halfDir =  normalize(viewDir + worldLightDir);
 				fixed3 specular = _LightColor0.rgb * _Specular.rgb * pow(max(0,dot(worldNormal,viewDir)),_Gloss);
-				fixed atten = 1.0;
-				fixed shadow = SHADOW_ATTENUATION(i); //阴影纹理进行采样
-				return fixed4(ambient + (diffuse + specular)*atten*shadow,1.0);
+				//atten 光照衰减和阴影值的乘积 i用于计算阴影纹理 i.worldPos用于计算光源空间中坐标，并且对光照衰减纹理采用得到光照衰减
+				UNITY_LIGHT_ATTENUATION(atten,i,i.worldPos);			
+				return fixed4(ambient + (diffuse + specular)*atten,1.0);
 			}
 			ENDCG
 		}
@@ -82,8 +78,8 @@ Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			#pragma multi_compile_fwdadd
-		
+			//#pragma multi_compile_fwdadd
+			#pragma multi_compile_fwdadd_fullshadows
 			#include "UnityCG.cginc"
 			#include "Lighting.cginc"
 			#include "AutoLight.cginc"
@@ -106,6 +102,7 @@ Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
 				float3 worldNormal : TEXCOORD0;
 				float3 worldPos :TEXCOORD1;
 				float2 uv : TEXCOORD2;
+				SHADOW_COORDS(3)
 			};
 
 			v2f vert (a2v v)
@@ -115,27 +112,29 @@ Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
 				o.worldNormal = UnityObjectToWorldNormal(v.normal);
 				o.worldPos = mul(unity_ObjectToWorld,v.vertex);
 				o.uv = v.texcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw; 
+				TRANSFER_SHADOW(o)
 				return o;
 			} 
 
 			fixed4 frag(v2f i) : SV_TARGET
 			{
 				fixed3 worldNormal = normalize(i.worldNormal);
-				#ifdef USING_DIRECTIONAL_LIGHT
-					fixed3 worldLightDir = normalize(_WorldSpaceLightPos0.xyz);
-				#else 
-					fixed3 worldLightDir = normalize(_WorldSpaceLightPos0.xyz - i.worldPos.xyz);
-				#endif
-				#ifdef USING_DIRECTIONAL_LIGHT
-					fixed atten = 1.0; //衰减值
-				#else
-				    //unity_WorldToLight 世界空间到光源空间
-					fixed3 lightCoord = mul(unity_WorldToLight, float4(i.worldPos,1)).xyz; //光源位置
-					//如果光源使用cookie 那么_LightTexture0 -> _LightTextureB0
-					fixed atten = tex2D(_LightTexture0,dot(lightCoord,lightCoord).rr).UNITY_ATTEN_CHANNEL;
-					//float distance = length(_WorldSpaceLightPos0.xyz - i.worldPos.xyz);
-					//atten = 1.0 / distance; // linear attenuation
-				#endif
+				fixed3 worldLightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
+				// #ifdef USING_DIRECTIONAL_LIGHT
+				// 	fixed3 worldLightDir = normalize(_WorldSpaceLightPos0.xyz);
+				// #else 
+				// 	fixed3 worldLightDir = normalize(_WorldSpaceLightPos0.xyz - i.worldPos.xyz);
+				// #endif
+				// #ifdef USING_DIRECTIONAL_LIGHT
+				// 	fixed atten = 1.0; //衰减值
+				// #else
+				//     //unity_WorldToLight 世界空间到光源空间
+				// 	fixed3 lightCoord = mul(unity_WorldToLight, float4(i.worldPos,1)).xyz; //光源位置
+				// 	//如果光源使用cookie 那么_LightTexture0 -> _LightTextureB0
+				// 	fixed atten = tex2D(_LightTexture0,dot(lightCoord,lightCoord).rr).UNITY_ATTEN_CHANNEL;
+				// 	//float distance = length(_WorldSpaceLightPos0.xyz - i.worldPos.xyz);
+				// 	//atten = 1.0 / distance; // linear attenuation
+				// #endif
 
 				fixed3 albedo = tex2D(_MainTex,i.uv).rgb *_Color.rgb;
 				fixed3 halfLambert = dot(worldNormal, worldLightDir)*0.5+0.5;
@@ -143,6 +142,7 @@ Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
 				fixed3 viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
 				fixed3 halfDir =  normalize(viewDir + worldLightDir);
 				fixed3 specular = _LightColor0.rgb * _Specular.rgb * pow(max(0,dot(worldNormal,viewDir)),_Gloss);
+				UNITY_LIGHT_ATTENUATION(atten,i,i.worldPos);
 				return fixed4((diffuse + specular)*atten,1.0);
 			}
 			ENDCG
@@ -175,3 +175,4 @@ Shader "Unity Shaders Book/Chapter 9/ForwardRendering"
 	}
 	Fallback "Specular"
 }
+
