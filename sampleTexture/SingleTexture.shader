@@ -49,7 +49,7 @@ Shader "Unity Shaders Book/Chapter 7/SingleTexture"
 				o.worldNormal = UnityObjectToWorldNormal(v.normal);
 				o.worldPos = mul(unity_ObjectToWorld,v.vertex).xyz;
 				o.uv = 	v.texcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw;
-				
+				// 变换纹理，先缩放（乘xy），后偏移（加zw）
 				//o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
 				return o;
 			}

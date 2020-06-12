@@ -9,6 +9,11 @@
 	SubShader
 	{
 		Tags {"Queue" = "Transparent" "RenderType" = "Transparent"  "IgnoreProjector" = "True"}
+// 其中LightMode标签指定该pass的渲染路径，Queue指定渲染顺序，IgnoreProjector指定是否忽略Projector(投影)的影响，PreviewType一般用于UIshader，PreviewType=Plane的话在材质面板看到的就是一个平面而不是材质球。
+// 但是很多人对RenderType的了解可能相比其他标签要稍微淡薄一些，只知道比如渲染不透明物体使用Opaque，渲染透明物体使用Transparent等，而官网上有提到RenderType会用于材质替代渲染（RenderWithShader   SetReplacementShader)，但究竟是如何去使用的，今天我总结下自己的理解。
+// ————————————————
+// 版权声明：本文为CSDN博主「MrASL」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+// 原文链接：https://blog.csdn.net/mobilebbki399/java/article/details/50512059
 		Pass
 		{
 			Tags {"LightMode" = "ForwardBase"}
