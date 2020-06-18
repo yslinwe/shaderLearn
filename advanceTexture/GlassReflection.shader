@@ -71,8 +71,9 @@
 				float3 worldPos = float3(i.TtoW0.w,i.TtoW1.w,i.TtoW2.w);
 				fixed3 worldViewDir = normalize(UnityWorldSpaceViewDir(worldPos));
 				fixed3 bump = UnpackNormal(tex2D(_BumpMap,i.uv.zw));
+				//使用切线空间下的法线进行偏移，该空间下的法线可以反映顶点局部空间下的法线方向
 				float2 offset = bump.xy * _Distortion * _RefractionTex_TexelSize; 
-				i.srcPos.xy = offset * i.srcPos.z + i.srcPos.xy;
+				i.srcPos.xy = offset * i.srcPos.z + i.srcPos.xy;//使用i.srcPos.z与偏移相乘，模拟深度越大，折射越强的效果
 				fixed3 refrCol = tex2D(_RefractionTex, i.srcPos.xy/i.srcPos.w).rgb;
 
 				bump = normalize(half3(dot(i.TtoW0.xyz,bump), dot(i.TtoW1.xyz,bump) , dot(i.TtoW2.xyz,bump)));
@@ -80,7 +81,7 @@
 				fixed4 texColor = tex2D(_MainTex,i.uv.xy);
 				fixed3 reflCol = texCUBE(_Cubemap, reflDir).rgb * texColor.rgb;
 				fixed3 finalColor = reflCol * (1 - _RefractAmount) + refrCol * _RefractAmount;
-				return fixed4(finalColor,1.0);
+				return fixed4(finalColor,1);
 			}
 			ENDCG
 		}
